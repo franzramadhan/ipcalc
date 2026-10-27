@@ -16,51 +16,55 @@
     <p>IPv4 and IPv6 subnet calculator that explains every answer, and maps IPv6 back to what you already know from IPv4.</p>
   </header>
 
-  <form id="form" autocomplete="off">
+  <nav class="tabs" role="tablist" aria-label="Tools">
+    <a role="tab" href="#explain" id="tab-explain" aria-controls="explain">Explain</a>
+    <a role="tab" href="#inside" id="tab-inside" aria-controls="inside">Inside?</a>
+    <a role="tab" href="#summarize" id="tab-summarize" aria-controls="summarize">Summarize</a>
+    <a role="tab" href="#ipv6" id="tab-ipv6" aria-controls="ipv6">IPv4 vs IPv6</a>
+  </nav>
+
+  <form id="explain" class="panel" role="tabpanel" aria-labelledby="tab-explain" autocomplete="off">
     <label for="q">Address, with an optional /prefix</label>
     <div class="row">
-      <input id="q" name="q" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="192.168.1.0/24 or 2001:db8::1/64" required>
+      <input id="q" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="192.168.1.0/24 or 2001:db8::1/64" required>
       <button type="submit">Explain</button>
       <button type="button" id="me" class="secondary">Explain my IP</button>
     </div>
     <div class="row split">
       <label for="split">Split into subnets of size /</label>
-      <input id="split" name="split" type="text" inputmode="numeric" maxlength="4" spellcheck="false" placeholder="optional, e.g. 24 or 64">
+      <input id="split" type="text" inputmode="numeric" maxlength="4" spellcheck="false" placeholder="optional, e.g. 24">
     </div>
-    <p class="examples">Try:
-      <button type="button" class="ex">192.168.1.0/24</button>
-      <button type="button" class="ex" data-q="10.0.0.0/22" data-split="24">10.0.0.0/22 into /24</button>
-      <button type="button" class="ex" data-q="2001:db8:abcd::/56" data-split="64">2001:db8:abcd::/56 into /64</button>
-      <button type="button" class="ex">100.64.0.1</button>
-      <button type="button" class="ex">2001:db8:abcd:12::1/64</button>
+    <p class="examples">e.g.
+      <button type="button" class="ex">192.168.1.0/24</button> ·
+      <button type="button" class="ex" data-q="10.0.0.0/22" data-split="24">10.0.0.0/22 into /24</button> ·
+      <button type="button" class="ex">100.64.0.1</button> ·
+      <button type="button" class="ex">2001:db8:abcd:12::1/64</button> ·
+      <button type="button" class="ex" data-q="2001:db8:abcd::/56" data-split="64">a /56 into /64</button> ·
       <button type="button" class="ex">fe80::21b:21ff:fe3c:4d5e</button>
-      <button type="button" class="ex">fd12:3456:789a::/48</button>
-      <button type="button" class="ex">ff02::1</button>
-      <button type="button" class="ex">64:ff9b::8.8.8.8</button>
     </p>
   </form>
 
-  <form id="cform" autocomplete="off">
-    <h2>Is it inside?</h2>
+  <form id="inside" class="panel" role="tabpanel" aria-labelledby="tab-inside" autocomplete="off" hidden>
+    <label for="net">Network</label>
+    <input id="net" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="10.0.0.0/22" required>
+    <label for="ip">Address or subnet to check</label>
     <div class="row">
-      <input id="net" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="Network, e.g. 10.0.0.0/22" aria-label="Network" required>
-      <input id="ip" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="Address or subnet, e.g. 10.0.1.77" aria-label="Address or subnet to check" required>
+      <input id="ip" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="10.0.1.77" required>
       <button type="submit">Check</button>
     </div>
-    <p class="examples">Try:
-      <button type="button" class="ex" data-net="10.0.0.0/22" data-ip="10.0.1.77">10.0.1.77 in 10.0.0.0/22</button>
+    <p class="examples">e.g.
+      <button type="button" class="ex" data-net="10.0.0.0/22" data-ip="10.0.1.77">10.0.1.77 in 10.0.0.0/22</button> ·
       <button type="button" class="ex" data-net="2001:db8:abcd::/48" data-ip="2001:db8:abce::1">2001:db8:abce::1 in 2001:db8:abcd::/48</button>
     </p>
   </form>
 
-  <form id="sform" autocomplete="off">
-    <h2>Summarize routes</h2>
+  <form id="summarize" class="panel" role="tabpanel" aria-labelledby="tab-summarize" autocomplete="off" hidden>
     <label for="sum">Subnets, separated by commas, spaces or new lines (IPv4, IPv6 or both)</label>
-    <textarea id="sum" rows="3" maxlength="4096" spellcheck="false" autocapitalize="off" placeholder="10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24" required></textarea>
+    <textarea id="sum" rows="4" maxlength="4096" spellcheck="false" autocapitalize="off" placeholder="10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24" required></textarea>
     <p><button type="submit">Summarize</button></p>
-    <p class="examples">Try:
-      <button type="button" class="ex" data-sum="10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24">four /24s</button>
-      <button type="button" class="ex" data-sum="192.168.0.0/24, 192.168.1.0/24, 192.168.2.0/24">three /24s</button>
+    <p class="examples">e.g.
+      <button type="button" class="ex" data-sum="10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24">four /24s</button> ·
+      <button type="button" class="ex" data-sum="192.168.0.0/24, 192.168.1.0/24, 192.168.2.0/24">three /24s</button> ·
       <button type="button" class="ex" data-sum="2001:db8:0:0::/64, 2001:db8:0:1::/64, 2001:db8:0:ff::/64">three IPv6 /64s</button>
     </p>
   </form>
@@ -68,9 +72,11 @@
   <section id="out" aria-live="polite">
     <p id="err" class="err" hidden></p>
     <div id="result" hidden>
-      <h2 id="title"></h2>
-      <table>
-        <thead><tr><th scope="col">Fact</th><th scope="col">Value</th><th scope="col">Why</th></tr></thead>
+      <div id="verdict" class="verdict">
+        <p id="big" class="big"></p>
+        <p id="sub" class="sub"></p>
+      </div>
+      <table class="facts">
         <tbody id="facts"></tbody>
       </table>
       <div id="splitbox" hidden>
@@ -81,20 +87,18 @@
           <tbody id="subnets"></tbody>
         </table>
       </div>
+      <details id="ai">
+        <summary>Ask your own AI</summary>
+        <p>Paste this into ChatGPT, Claude, Copilot or any agent. It carries the verified values above, so the agent explains instead of recomputing (agents often get <code>::</code> and prefix boundaries wrong).</p>
+        <textarea id="prompt" rows="12" readonly aria-label="Prompt for your AI agent"></textarea>
+        <p><button type="button" id="copy">Copy prompt</button> <span id="copied" role="status"></span></p>
+      </details>
     </div>
   </section>
 
-  <section id="ai" hidden>
-    <h2>Ask your own AI</h2>
-    <p>Paste this into ChatGPT, Claude, Copilot or any agent. It carries the verified values above, so the agent explains instead of recomputing (agents often get <code>::</code> and prefix boundaries wrong).</p>
-    <textarea id="prompt" rows="14" readonly aria-label="Prompt for your AI agent"></textarea>
-    <p><button type="button" id="copy">Copy prompt</button> <span id="copied" role="status"></span></p>
-  </section>
-
-  <section>
-    <h2>IPv4 habit, IPv6 version</h2>
+  <section id="ipv6" class="panel" role="tabpanel" aria-labelledby="tab-ipv6" hidden>
     <table class="cheat">
-      <thead><tr><th scope="col">IPv4</th><th scope="col">IPv6</th></tr></thead>
+      <thead><tr><th scope="col">IPv4 habit</th><th scope="col">IPv6 version</th></tr></thead>
       <tbody>
         <tr><td>32 bits, 4 decimal octets: <code>192.0.2.1</code></td><td>128 bits, 8 hex groups: <code>2001:db8::1</code>; <code>::</code> once replaces the longest run of zero groups</td></tr>
         <tr><td>Private <code>10/8</code>, <code>172.16/12</code>, <code>192.168/16</code> + NAT</td><td>Global addresses + a firewall. ULA <code>fd00::/8</code> exists for internal-only use</td></tr>
