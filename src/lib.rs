@@ -26,10 +26,11 @@ pub fn route(method: &str, path: &str, query: Option<&str>, client_ip: Option<&s
         "/healthz" => text(200, "text/plain; charset=utf-8", "no-store", "ok\n"),
         "/api/v1/calc" => {
             let q = query.and_then(|q| param(q, "q")).unwrap_or_default();
-            answer(calc::calc(&q), "public, max-age=86400")
+            let split = query.and_then(|q| param(q, "split"));
+            answer(calc::calc(&q, split.as_deref()), "public, max-age=86400")
         }
         "/api/v1/me" => match client_ip {
-            Some(ip) => answer(calc::calc(ip), "private, no-store"),
+            Some(ip) => answer(calc::calc(ip, None), "private, no-store"),
             None => json(404, "no-store", serde_json::json!({"error": "Your IP is only known through the public site."})),
         },
         _ => json(404, "public, max-age=300", serde_json::json!({"error": "Not found."})),
@@ -91,6 +92,9 @@ mod tests {
         let r = route("GET", "/api/v1/calc", Some("q=2001%3Adb8%3A%3A1%2F64"), None);
         assert_eq!(r.status, 200, "{}", r.body);
         assert!(r.body.contains("2001:db8::/64"));
+        let r = route("GET", "/api/v1/calc", Some("q=10.0.0.0%2F22&split=24"), None);
+        assert!(r.body.contains("10.0.3.0/24"), "{}", r.body);
+        assert_eq!(route("GET", "/api/v1/calc", Some("q=10.0.0.0%2F22&split=21"), None).status, 400);
         assert_eq!(route("GET", "/api/v1/calc", Some("q=nope"), None).status, 400);
         assert_eq!(route("GET", "/api/v1/calc", None, None).status, 400);
         assert_eq!(route("GET", "/api/v1/me", None, None).status, 404);

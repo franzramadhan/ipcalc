@@ -23,8 +23,14 @@
       <button type="submit">Explain</button>
       <button type="button" id="me" class="secondary">Explain my IP</button>
     </div>
+    <div class="row split">
+      <label for="split">Split into subnets of size /</label>
+      <input id="split" name="split" type="text" inputmode="numeric" maxlength="4" spellcheck="false" placeholder="optional, e.g. 24 or 64">
+    </div>
     <p class="examples">Try:
       <button type="button" class="ex">192.168.1.0/24</button>
+      <button type="button" class="ex" data-q="10.0.0.0/22" data-split="24">10.0.0.0/22 into /24</button>
+      <button type="button" class="ex" data-q="2001:db8:abcd::/56" data-split="64">2001:db8:abcd::/56 into /64</button>
       <button type="button" class="ex">100.64.0.1</button>
       <button type="button" class="ex">2001:db8:abcd:12::1/64</button>
       <button type="button" class="ex">fe80::21b:21ff:fe3c:4d5e</button>
@@ -42,6 +48,14 @@
         <thead><tr><th scope="col">Fact</th><th scope="col">Value</th><th scope="col">Why</th></tr></thead>
         <tbody id="facts"></tbody>
       </table>
+      <div id="splitbox" hidden>
+        <h2 id="splittitle"></h2>
+        <p id="splitnote" class="note"></p>
+        <table>
+          <thead><tr><th scope="col">Subnet</th><th scope="col">Range</th></tr></thead>
+          <tbody id="subnets"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -60,7 +74,8 @@
         <tr><td>32 bits, 4 decimal octets: <code>192.0.2.1</code></td><td>128 bits, 8 hex groups: <code>2001:db8::1</code>; <code>::</code> once replaces the longest run of zero groups</td></tr>
         <tr><td>Private <code>10/8</code>, <code>172.16/12</code>, <code>192.168/16</code> + NAT</td><td>Global addresses + a firewall. ULA <code>fd00::/8</code> exists for internal-only use</td></tr>
         <tr><td><code>/24</code> is a typical LAN</td><td><code>/64</code> is always a LAN. A home gets a <code>/56</code> (256 LANs), a site a <code>/48</code></td></tr>
-        <tr><td>Netmask <code>255.255.255.0</code></td><td>Only <code>/prefix</code>, no masks</td></tr>
+        <tr><td>Netmask <code>255.255.255.0</code>, wildcard <code>0.0.0.255</code> in ACLs</td><td>Only <code>/prefix</code>, no masks</td></tr>
+        <tr><td>CIDR and VLSM: split a block into subnets of different sizes</td><td>Same CIDR math on 128 bits, but LANs stay <code>/64</code>: you split the site prefix (<code>/48</code>, <code>/56</code>) into /64s, and use <code>/127</code> or <code>/128</code> only for links and loopbacks</td></tr>
         <tr><td>Broadcast</td><td>None. Multicast instead: <code>ff02::1</code> all nodes, <code>ff02::2</code> all routers</td></tr>
         <tr><td>ARP</td><td>NDP: ICMPv6 to a solicited-node multicast group <code>ff02::1:ffXX:XXXX</code></td></tr>
         <tr><td>DHCP hands out addresses</td><td>SLAAC: the router advertises the prefix, the host picks its own interface ID. DHCPv6 optional</td></tr>

@@ -6,6 +6,8 @@ to what you already know from IPv4. Live at
 
 - Paste an address with an optional prefix (`192.168.1.0/24`,
   `2001:db8::1/64`, `fe80::1%eth0`). Every result row has a short "why".
+- Split a block into smaller subnets (`10.0.0.0/22` into /24s,
+  `2001:db8:abcd::/56` into /64s). IPv4 results include the wildcard mask.
 - **Explain my IP** explains the address you connect from (Cloudflare's
   `CF-Connecting-IP`). It is shown back to you only, never stored or logged.
 - **Copy prompt** gives you a prompt for your own AI agent, built from the
@@ -19,7 +21,7 @@ network, about 6 MiB of memory.
 
 | Path | Returns |
 |------|---------|
-| `GET /api/v1/calc?q=<addr[/prefix]>` | JSON: `family`, `canonical`, `kind`, `facts[]` (`label`, `value`, `why`), `prompt` |
+| `GET /api/v1/calc?q=<addr[/prefix]>[&split=<n>]` | JSON: `family`, `canonical`, `kind`, `facts[]` (`label`, `value`, `why`), `split` (`block`, `prefix`, `total`, first 256 `subnets[]`) or null, `prompt` |
 | `GET /api/v1/me` | The same for your own IP (only behind Cloudflare) |
 | `GET /healthz` | `ok` |
 
