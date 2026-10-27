@@ -21,7 +21,8 @@ pub fn route(method: &str, path: &str, query: Option<&str>, client_ip: Option<&s
         return json(405, "no-store", serde_json::json!({"error": "Only GET is supported."}));
     }
     match path {
-        "/" => text(200, "text/html; charset=utf-8", "public, max-age=300", PAGE),
+        // no-cache: Cloudflare stretches max-age to a day; assets carry ?v=<version>
+        "/" => text(200, "text/html; charset=utf-8", "no-cache", &PAGE.replace("VERSION", env!("CARGO_PKG_VERSION"))),
         "/app.css" => text(200, "text/css; charset=utf-8", "public, max-age=300", CSS),
         "/app.js" => text(200, "text/javascript; charset=utf-8", "public, max-age=300", JS),
         "/healthz" => text(200, "text/plain; charset=utf-8", "no-store", "ok\n"),
@@ -95,6 +96,7 @@ mod tests {
     #[test]
     fn routes() {
         assert_eq!(route("GET", "/", None, None).status, 200);
+        assert!(route("GET", "/", None, None).body.contains(concat!("/app.js?v=", env!("CARGO_PKG_VERSION"))));
         assert_eq!(route("GET", "/healthz", None, None).body, "ok\n");
         assert_eq!(route("POST", "/", None, None).status, 405);
         assert_eq!(route("GET", "/nope", None, None).status, 404);
