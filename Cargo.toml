@@ -1,6 +1,6 @@
 [package]
 name = "ipcalc"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2024"
 license = "MIT"
 description = "IPv4/IPv6 calculator that explains its answers, served as a wasi:http component"

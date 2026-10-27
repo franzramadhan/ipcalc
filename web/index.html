@@ -21,6 +21,7 @@
     <a role="tab" href="#inside" id="tab-inside" aria-controls="inside">Inside?</a>
     <a role="tab" href="#summarize" id="tab-summarize" aria-controls="summarize">Summarize</a>
     <a role="tab" href="#ipv6" id="tab-ipv6" aria-controls="ipv6">IPv4 vs IPv6</a>
+    <a role="tab" href="#api" id="tab-api" aria-controls="api">API</a>
   </nav>
 
   <form id="explain" class="panel" role="tabpanel" aria-labelledby="tab-explain" autocomplete="off">
@@ -87,6 +88,7 @@
           <tbody id="subnets"></tbody>
         </table>
       </div>
+      <p class="note apiline">This result from the API: <a id="json" href="#">JSON</a> · <code id="curl"></code></p>
       <details id="ai">
         <summary>Ask your own AI</summary>
         <p>Paste this into ChatGPT, Claude, Copilot or any agent. It carries the verified values above, so the agent explains instead of recomputing (agents often get <code>::</code> and prefix boundaries wrong).</p>
@@ -117,6 +119,24 @@
         <tr><td>IPv6-only client to IPv4-only server</td><td>NAT64 + DNS64: <code>64:ff9b::192.0.2.1</code></td></tr>
       </tbody>
     </table>
+  </section>
+
+  <section id="api" class="panel" role="tabpanel" aria-labelledby="tab-api" hidden>
+    <p>Everything on this page comes from a small JSON API. No key, no sign-up. <code>GET</code> only, answers are cacheable.</p>
+    <table>
+      <thead><tr><th scope="col">Request</th><th scope="col">Returns</th></tr></thead>
+      <tbody>
+        <tr><td class="v">/api/v1/calc?q=&lt;addr[/prefix]&gt;[&amp;split=&lt;n&gt;]</td><td>Explain an address or prefix, optionally split into /n subnets (first 256 listed)</td></tr>
+        <tr><td class="v">/api/v1/contains?net=&lt;cidr&gt;&amp;ip=&lt;addr|cidr&gt;</td><td>Whether the address or subnet is inside the network</td></tr>
+        <tr><td class="v">/api/v1/summarize?q=&lt;list&gt;</td><td>Exact summary and single supernet of up to 64 subnets (comma, space or newline separated)</td></tr>
+        <tr><td class="v">/api/v1/me</td><td>Explain the IP you connect from</td></tr>
+      </tbody>
+    </table>
+    <p>Every answer has <code>title</code>, <code>facts[]</code> (<code>label</code>, <code>value</code>, <code>why</code>) and <code>prompt</code>; <code>calc</code> adds <code>family</code>, <code>canonical</code>, <code>kind</code> and <code>split</code>. Bad input returns HTTP 400 with <code>{"error": "..."}</code>.</p>
+    <pre><code>curl -s 'https://ipcalc.franzramadhan.dev/api/v1/calc?q=2001:db8::1/64' | jq '.facts[] | {label, value}'
+curl -s 'https://ipcalc.franzramadhan.dev/api/v1/contains?net=10.0.0.0/22&amp;ip=10.0.1.77' | jq -r '.facts[] | select(.label == "Result").value'
+curl -s 'https://ipcalc.franzramadhan.dev/api/v1/summarize?q=10.0.0.0/24,10.0.1.0/24' | jq '.facts[1].value'</code></pre>
+    <p class="note">Rate limit: 60 API requests per 10 seconds per IP, then blocked for 10 seconds. The service sleeps from 23:30 to 06:00 WIB. Source and docs: <a href="https://github.com/franzramadhan/ipcalc">github.com/franzramadhan/ipcalc</a>.</p>
   </section>
 
   <footer>

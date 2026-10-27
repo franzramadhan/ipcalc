@@ -1,6 +1,6 @@
 const $ = (id) => document.getElementById(id);
 const ME_NOTE = "Note: the Address below is my public IP. Remove it before sharing this prompt.\n\n";
-const TABS = ["explain", "inside", "summarize", "ipv6"];
+const TABS = ["explain", "inside", "summarize", "ipv6", "api"];
 let resultTab = null; // the tab whose result is on screen
 
 function show(tab) {
@@ -86,6 +86,8 @@ async function run(url, note = "") {
     );
   }
 
+  $("json").href = url;
+  $("curl").textContent = `curl -s '${location.origin}${url}'`;
   $("prompt").value = note + data.prompt;
   $("copied").textContent = "";
   $("result").hidden = false;
