@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ipcalc</title>
+<meta name="description" content="IPv4 and IPv6 subnet calculator that explains every answer, and maps IPv6 back to what you know from IPv4.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232563eb'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='white' font-family='monospace'%3E::%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ipcalc</h1>
+    <p>IPv4 and IPv6 subnet calculator that explains every answer, and maps IPv6 back to what you already know from IPv4.</p>
+  </header>
+
+  <form id="form" autocomplete="off">
+    <label for="q">Address, with an optional /prefix</label>
+    <div class="row">
+      <input id="q" name="q" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="192.168.1.0/24 or 2001:db8::1/64" required>
+      <button type="submit">Explain</button>
+      <button type="button" id="me" class="secondary">Explain my IP</button>
+    </div>
+    <p class="examples">Try:
+      <button type="button" class="ex">192.168.1.0/24</button>
+      <button type="button" class="ex">100.64.0.1</button>
+      <button type="button" class="ex">2001:db8:abcd:12::1/64</button>
+      <button type="button" class="ex">fe80::21b:21ff:fe3c:4d5e</button>
+      <button type="button" class="ex">fd12:3456:789a::/48</button>
+      <button type="button" class="ex">ff02::1</button>
+      <button type="button" class="ex">64:ff9b::8.8.8.8</button>
+    </p>
+  </form>
+
+  <section id="out" aria-live="polite">
+    <p id="err" class="err" hidden></p>
+    <div id="result" hidden>
+      <h2 id="title"></h2>
+      <table>
+        <thead><tr><th scope="col">Fact</th><th scope="col">Value</th><th scope="col">Why</th></tr></thead>
+        <tbody id="facts"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="ai" hidden>
+    <h2>Ask your own AI</h2>
+    <p>Paste this into ChatGPT, Claude, Copilot or any agent. It carries the verified values above, so the agent explains instead of recomputing (agents often get <code>::</code> and prefix boundaries wrong).</p>
+    <textarea id="prompt" rows="14" readonly aria-label="Prompt for your AI agent"></textarea>
+    <p><button type="button" id="copy">Copy prompt</button> <span id="copied" role="status"></span></p>
+  </section>
+
+  <section>
+    <h2>IPv4 habit, IPv6 version</h2>
+    <table class="cheat">
+      <thead><tr><th scope="col">IPv4</th><th scope="col">IPv6</th></tr></thead>
+      <tbody>
+        <tr><td>32 bits, 4 decimal octets: <code>192.0.2.1</code></td><td>128 bits, 8 hex groups: <code>2001:db8::1</code>; <code>::</code> once replaces the longest run of zero groups</td></tr>
+        <tr><td>Private <code>10/8</code>, <code>172.16/12</code>, <code>192.168/16</code> + NAT</td><td>Global addresses + a firewall. ULA <code>fd00::/8</code> exists for internal-only use</td></tr>
+        <tr><td><code>/24</code> is a typical LAN</td><td><code>/64</code> is always a LAN. A home gets a <code>/56</code> (256 LANs), a site a <code>/48</code></td></tr>
+        <tr><td>Netmask <code>255.255.255.0</code></td><td>Only <code>/prefix</code>, no masks</td></tr>
+        <tr><td>Broadcast</td><td>None. Multicast instead: <code>ff02::1</code> all nodes, <code>ff02::2</code> all routers</td></tr>
+        <tr><td>ARP</td><td>NDP: ICMPv6 to a solicited-node multicast group <code>ff02::1:ffXX:XXXX</code></td></tr>
+        <tr><td>DHCP hands out addresses</td><td>SLAAC: the router advertises the prefix, the host picks its own interface ID. DHCPv6 optional</td></tr>
+        <tr><td><code>169.254/16</code> only when DHCP fails</td><td><code>fe80::/10</code> on every interface, always</td></tr>
+        <tr><td>One address per interface</td><td>Several: link-local, global (often a stable one plus a rotating privacy one), maybe ULA</td></tr>
+        <tr><td><code>127.0.0.1</code></td><td><code>::1</code></td></tr>
+        <tr><td><code>0.0.0.0</code></td><td><code>::</code></td></tr>
+        <tr><td>An IPv4 client on a dual-stack socket</td><td><code>::ffff:192.0.2.1</code> (IPv4-mapped)</td></tr>
+        <tr><td>IPv6-only client to IPv4-only server</td><td>NAT64 + DNS64: <code>64:ff9b::192.0.2.1</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p>Nothing you type is stored or logged. Runs as a WebAssembly component on a homelab Kubernetes cluster, asleep from 23:30 to 06:00 WIB.
+    <a href="https://github.com/franzramadhan/ipcalc">Source</a> · <a href="https://franzramadhan.dev">franzramadhan.dev</a></p>
+  </footer>
+</main>
+</body>
+</html>

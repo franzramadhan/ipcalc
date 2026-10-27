@@ -1,0 +1,24 @@
+[package]
+name = "ipcalc"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "IPv4/IPv6 calculator that explains its answers, served as a wasi:http component"
+repository = "https://github.com/franzramadhan/ipcalc"
+
+[dependencies]
+serde_json = "1"
+
+# The HTTP server only exists in the Wasm build; `cargo test` runs the
+# calculator natively.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wstd = { version = "0.6.8", default-features = false }
+# Pinned to WASI 0.2.4: the runwasi wasmtime shim (wasmtime 36) serves WASI
+# 0.2.6 and refuses components that import newer versions. See README.
+wasip2 = "=1.0.1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
