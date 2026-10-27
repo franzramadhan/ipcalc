@@ -15,36 +15,11 @@ const PROMPT_SPLIT: usize = 8;
 /// subnets of that size. The error is safe to show the user (it never echoes
 /// the input).
 pub fn calc(input: &str, split: Option<&str>) -> Result<Value, String> {
-    let s = input.trim();
-    if s.is_empty() {
-        return Err("Enter an IPv4 or IPv6 address, optionally with a /prefix.".into());
-    }
-    if s.len() > MAX_INPUT {
-        return Err(format!("Input is longer than {MAX_INPUT} characters."));
-    }
-    let (addr, prefix) = match s.split_once('/') {
-        Some((a, p)) => (a, Some(p)),
-        None => (s, None),
-    };
-    // fe80::1%eth0: std does not parse zone IDs; drop it and say why.
-    let (addr, zone) = match addr.split_once('%') {
-        Some((a, _)) => (a, true),
-        None => (addr, false),
-    };
-    let ip: IpAddr = addr
-        .parse()
-        .map_err(|_| "Not a valid IPv4 or IPv6 address.".to_string())?;
-    let max = if ip.is_ipv4() { 32 } else { 128 };
-    let p = match prefix {
-        None => max,
-        Some(p) => match p.parse::<u8>() {
-            Ok(n) if n <= max => n,
-            _ => return Err(format!("Prefix must be a number from 0 to {max}.")),
-        },
-    };
+    let Parsed { ip, prefix: p, explicit, zone } = parse(input)?;
+    let max = width(ip);
     let mut out = match ip {
-        IpAddr::V4(v4) => calc_v4(v4, p, prefix.is_some()),
-        IpAddr::V6(v6) => calc_v6(v6, p, prefix.is_some()),
+        IpAddr::V4(v4) => calc_v4(v4, p, explicit),
+        IpAddr::V6(v6) => calc_v6(v6, p, explicit),
     };
     if zone {
         out.facts.insert(
@@ -64,6 +39,66 @@ pub fn calc(input: &str, split: Option<&str>) -> Result<Value, String> {
         out.split = Some(split_block(ip, p, n));
     }
     Ok(out.into_json())
+}
+
+pub(crate) struct Parsed {
+    pub ip: IpAddr,
+    pub prefix: u8,
+    /// a /prefix was given (otherwise /32 or /128)
+    pub explicit: bool,
+    /// a %zone was given and dropped
+    pub zone: bool,
+}
+
+/// Parse `addr[/prefix][%zone]`. Errors never echo the input.
+pub(crate) fn parse(input: &str) -> Result<Parsed, String> {
+    let s = input.trim();
+    if s.is_empty() {
+        return Err("Enter an IPv4 or IPv6 address, optionally with a /prefix.".into());
+    }
+    if s.len() > MAX_INPUT {
+        return Err(format!("Input is longer than {MAX_INPUT} characters."));
+    }
+    let (addr, prefix) = match s.split_once('/') {
+        Some((a, p)) => (a, Some(p)),
+        None => (s, None),
+    };
+    // fe80::1%eth0: std does not parse zone IDs; drop it and say why.
+    let (addr, zone) = match addr.split_once('%') {
+        Some((a, _)) => (a, true),
+        None => (addr, false),
+    };
+    let ip: IpAddr = addr.parse().map_err(|_| "Not a valid IPv4 or IPv6 address.".to_string())?;
+    let max = width(ip);
+    let p = match prefix {
+        None => max,
+        Some(p) => match p.parse::<u8>() {
+            Ok(n) if n <= max => n,
+            _ => return Err(format!("Prefix must be a number from 0 to {max}.")),
+        },
+    };
+    Ok(Parsed { ip, prefix: p, explicit: prefix.is_some(), zone })
+}
+
+pub(crate) fn width(ip: IpAddr) -> u8 {
+    if ip.is_ipv4() { 32 } else { 128 }
+}
+
+/// The address as a number, so both families share the prefix math.
+pub(crate) fn bits(ip: IpAddr) -> u128 {
+    match ip {
+        IpAddr::V4(a) => u32::from(a) as u128,
+        IpAddr::V6(a) => u128::from(a),
+    }
+}
+
+/// Mask with the first `p` of `w` bits set.
+pub(crate) fn mask(p: u8, w: u8) -> u128 {
+    if p == 0 { 0 } else { (u128::MAX << (128 - p)) >> (128 - w) }
+}
+
+pub(crate) fn addr(n: u128, w: u8) -> IpAddr {
+    if w == 32 { IpAddr::V4(Ipv4Addr::from(n as u32)) } else { IpAddr::V6(Ipv6Addr::from(n)) }
 }
 
 struct Out {
@@ -94,6 +129,7 @@ impl Out {
             })
         });
         json!({
+            "title": format!("{} ({})", self.canonical, if self.family == "ipv4" { "IPv4" } else { "IPv6" }),
             "family": self.family,
             "canonical": self.canonical,
             "kind": self.kind,
@@ -154,7 +190,7 @@ fn v4_hosts(s: u32, n: u8) -> String {
     }
 }
 
-fn fact(label: &str, value: impl Into<String>, why: impl Into<String>) -> Value {
+pub(crate) fn fact(label: &str, value: impl Into<String>, why: impl Into<String>) -> Value {
     json!({"label": label, "value": value.into(), "why": why.into()})
 }
 
@@ -522,16 +558,29 @@ fn questions(kind: &str) -> [&'static str; 3] {
     }
 }
 
-fn prompt(out: &Out) -> String {
+/// The prompt for the visitor's AI agent: the verified facts, optional extra
+/// lines, numbered questions and a slot for their own.
+pub(crate) fn render_prompt(facts: &[Value], extra: &str, qs: &[&str]) -> String {
     let mut s = String::from(
         "I'm an engineer who knows IPv4 well and is learning IPv6.\n\
          Explain this result to me, comparing each point with its IPv4 equivalent.\n\
          Don't recompute the values below; they come from ipcalc.franzramadhan.dev and are already verified.\n\
          Ask me before assuming anything about my network.\n\n",
     );
-    for f in &out.facts {
+    for f in facts {
         s.push_str(&format!("{}: {}\n", f["label"].as_str().unwrap_or(""), f["value"].as_str().unwrap_or("")));
     }
+    s.push_str(extra);
+    s.push_str("\nMy questions:\n");
+    for (i, q) in qs.iter().enumerate() {
+        s.push_str(&format!("{}. {q}\n", i + 1));
+    }
+    s.push_str(&format!("{}. <your question>\n", qs.len() + 1));
+    s
+}
+
+fn prompt(out: &Out) -> String {
+    let mut s = String::new();
     let mut qs: Vec<&str> = questions(out.kind).to_vec();
     if out.family == "ipv4" {
         qs.push("When do I use a wildcard mask instead of a netmask, and what do IPv6 ACLs use instead?");
@@ -552,20 +601,15 @@ fn prompt(out: &Out) -> String {
             "How should I number these subnets (subnet IDs) so the address plan stays readable, for example per site, VLAN or purpose?"
         });
     }
-    s.push_str("\nMy questions:\n");
-    for (i, q) in qs.iter().enumerate() {
-        s.push_str(&format!("{}. {q}\n", i + 1));
-    }
-    s.push_str(&format!("{}. <your question>\n", qs.len() + 1));
-    s
+    render_prompt(&out.facts, &s, &qs)
 }
 
 /// 2^n, exact with separators up to 2^64, then as a power.
-fn pow2(n: u8) -> String {
+pub(crate) fn pow2(n: u8) -> String {
     if n <= 64 { group(1u128 << n) } else { format!("2^{n}") }
 }
 
-fn group(n: u128) -> String {
+pub(crate) fn group(n: u128) -> String {
     let s = n.to_string();
     let mut out = String::new();
     for (i, c) in s.chars().enumerate() {

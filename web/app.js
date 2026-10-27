@@ -6,7 +6,7 @@ function cells(values, classes = []) {
   values.forEach((text, i) => {
     const td = document.createElement("td");
     let cls = classes[i] || "";
-    if (cls === "v" && /\s/.test(text) && text.length > 30) cls = "v prose";
+    if (cls === "v" && /[a-z]{3,} [a-z]/i.test(text)) cls = "v prose";
     td.className = cls;
     td.textContent = text;
     tr.append(td);
@@ -27,7 +27,7 @@ async function run(url, note = "") {
     $("result").hidden = $("ai").hidden = true;
     return;
   }
-  $("title").textContent = `${data.canonical} (${data.family === "ipv4" ? "IPv4" : "IPv6"})`;
+  $("title").textContent = data.title;
   $("facts").replaceChildren(...data.facts.map((f) => cells([f.label, f.value, f.why], ["l", "v", "w"])));
 
   const sp = data.split;
@@ -55,16 +55,41 @@ function explain(q, split = "") {
   run(`/api/v1/calc?${params}`);
 }
 
+function contains(net, ip) {
+  $("net").value = net;
+  $("ip").value = ip;
+  const params = new URLSearchParams({ net, ip });
+  history.replaceState(null, "", `?${params}`);
+  run(`/api/v1/contains?${params}`);
+}
+
+function summarize(list) {
+  $("sum").value = list;
+  history.replaceState(null, "", `?${new URLSearchParams({ sum: list })}`);
+  run(`/api/v1/summarize?${new URLSearchParams({ q: list })}`);
+}
+
 $("form").addEventListener("submit", (e) => {
   e.preventDefault();
   explain($("q").value.trim(), $("split").value.trim());
+});
+$("cform").addEventListener("submit", (e) => {
+  e.preventDefault();
+  contains($("net").value.trim(), $("ip").value.trim());
+});
+$("sform").addEventListener("submit", (e) => {
+  e.preventDefault();
+  summarize($("sum").value.trim());
 });
 $("me").addEventListener("click", () => {
   history.replaceState(null, "", "/");
   run("/api/v1/me", ME_NOTE);
 });
 for (const b of document.querySelectorAll("button.ex")) {
-  b.addEventListener("click", () => explain(b.dataset.q || b.textContent, b.dataset.split || ""));
+  const d = b.dataset;
+  b.addEventListener("click", () =>
+    d.net ? contains(d.net, d.ip) : d.sum ? summarize(d.sum) : explain(d.q || b.textContent, d.split || ""),
+  );
 }
 $("copy").addEventListener("click", async () => {
   try {
@@ -78,3 +103,5 @@ $("copy").addEventListener("click", async () => {
 
 const params = new URLSearchParams(location.search);
 if (params.get("q")) explain(params.get("q"), params.get("split") || "");
+else if (params.get("net")) contains(params.get("net"), params.get("ip") || "");
+else if (params.get("sum")) summarize(params.get("sum"));

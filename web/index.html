@@ -40,6 +40,31 @@
     </p>
   </form>
 
+  <form id="cform" autocomplete="off">
+    <h2>Is it inside?</h2>
+    <div class="row">
+      <input id="net" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="Network, e.g. 10.0.0.0/22" aria-label="Network" required>
+      <input id="ip" type="text" maxlength="64" spellcheck="false" autocapitalize="off" placeholder="Address or subnet, e.g. 10.0.1.77" aria-label="Address or subnet to check" required>
+      <button type="submit">Check</button>
+    </div>
+    <p class="examples">Try:
+      <button type="button" class="ex" data-net="10.0.0.0/22" data-ip="10.0.1.77">10.0.1.77 in 10.0.0.0/22</button>
+      <button type="button" class="ex" data-net="2001:db8:abcd::/48" data-ip="2001:db8:abce::1">2001:db8:abce::1 in 2001:db8:abcd::/48</button>
+    </p>
+  </form>
+
+  <form id="sform" autocomplete="off">
+    <h2>Summarize routes</h2>
+    <label for="sum">Subnets, separated by commas, spaces or new lines (IPv4, IPv6 or both)</label>
+    <textarea id="sum" rows="3" maxlength="4096" spellcheck="false" autocapitalize="off" placeholder="10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24" required></textarea>
+    <p><button type="submit">Summarize</button></p>
+    <p class="examples">Try:
+      <button type="button" class="ex" data-sum="10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24, 10.0.3.0/24">four /24s</button>
+      <button type="button" class="ex" data-sum="192.168.0.0/24, 192.168.1.0/24, 192.168.2.0/24">three /24s</button>
+      <button type="button" class="ex" data-sum="2001:db8:0:0::/64, 2001:db8:0:1::/64, 2001:db8:0:ff::/64">three IPv6 /64s</button>
+    </p>
+  </form>
+
   <section id="out" aria-live="polite">
     <p id="err" class="err" hidden></p>
     <div id="result" hidden>
@@ -76,6 +101,7 @@
         <tr><td><code>/24</code> is a typical LAN</td><td><code>/64</code> is always a LAN. A home gets a <code>/56</code> (256 LANs), a site a <code>/48</code></td></tr>
         <tr><td>Netmask <code>255.255.255.0</code>, wildcard <code>0.0.0.255</code> in ACLs</td><td>Only <code>/prefix</code>, no masks</td></tr>
         <tr><td>CIDR and VLSM: split a block into subnets of different sizes</td><td>Same CIDR math on 128 bits, but LANs stay <code>/64</code>: you split the site prefix (<code>/48</code>, <code>/56</code>) into /64s, and use <code>/127</code> or <code>/128</code> only for links and loopbacks</td></tr>
+        <tr><td>Summarize <code>10.0.0.0/24</code>..<code>10.0.3.0/24</code> into <code>10.0.0.0/22</code></td><td>Same math. Plan on nibble boundaries (/48, /52, /56, /60, /64) so prefixes stay readable in hex and summarize cleanly</td></tr>
         <tr><td>Broadcast</td><td>None. Multicast instead: <code>ff02::1</code> all nodes, <code>ff02::2</code> all routers</td></tr>
         <tr><td>ARP</td><td>NDP: ICMPv6 to a solicited-node multicast group <code>ff02::1:ffXX:XXXX</code></td></tr>
         <tr><td>DHCP hands out addresses</td><td>SLAAC: the router advertises the prefix, the host picks its own interface ID. DHCPv6 optional</td></tr>

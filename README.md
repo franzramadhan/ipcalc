@@ -8,6 +8,10 @@ to what you already know from IPv4. Live at
   `2001:db8::1/64`, `fe80::1%eth0`). Every result row has a short "why".
 - Split a block into smaller subnets (`10.0.0.0/22` into /24s,
   `2001:db8:abcd::/56` into /64s). IPv4 results include the wildcard mask.
+- Check whether an address or subnet is inside a network, with the masking
+  step a router does (`10.0.1.77` in `10.0.0.0/22`).
+- Summarize a list of subnets: the exact minimal set of prefixes, and the
+  single supernet with the count of extra addresses it would also cover.
 - **Explain my IP** explains the address you connect from (Cloudflare's
   `CF-Connecting-IP`). It is shown back to you only, never stored or logged.
 - **Copy prompt** gives you a prompt for your own AI agent, built from the
@@ -23,6 +27,8 @@ network, about 6 MiB of memory.
 |------|---------|
 | `GET /api/v1/calc?q=<addr[/prefix]>[&split=<n>]` | JSON: `family`, `canonical`, `kind`, `facts[]` (`label`, `value`, `why`), `split` (`block`, `prefix`, `total`, first 256 `subnets[]`) or null, `prompt` |
 | `GET /api/v1/me` | The same for your own IP (only behind Cloudflare) |
+| `GET /api/v1/contains?net=<cidr>&ip=<addr\|cidr>` | JSON: `title`, `facts[]` (result is the `Result` fact: `inside` or `outside`), `prompt` |
+| `GET /api/v1/summarize?q=<list>` | JSON: `title`, `facts[]` (exact summary, single supernet, extra addresses; per family when mixed), `prompt`. Up to 64 subnets, separated by commas, spaces or new lines |
 | `GET /healthz` | `ok` |
 
 ```bash

@@ -1,4 +1,5 @@
 pub mod calc;
+pub mod tools;
 
 /// A response, independent of the HTTP library so routing is testable
 /// natively.
@@ -28,6 +29,14 @@ pub fn route(method: &str, path: &str, query: Option<&str>, client_ip: Option<&s
             let q = query.and_then(|q| param(q, "q")).unwrap_or_default();
             let split = query.and_then(|q| param(q, "split"));
             answer(calc::calc(&q, split.as_deref()), "public, max-age=86400")
+        }
+        "/api/v1/contains" => {
+            let get = |k| query.and_then(|q| param(q, k)).unwrap_or_default();
+            answer(tools::contains(&get("net"), &get("ip")), "public, max-age=86400")
+        }
+        "/api/v1/summarize" => {
+            let q = query.and_then(|q| param(q, "q")).unwrap_or_default();
+            answer(tools::summarize(&q), "public, max-age=86400")
         }
         "/api/v1/me" => match client_ip {
             Some(ip) => answer(calc::calc(ip, None), "private, no-store"),
@@ -97,6 +106,11 @@ mod tests {
         assert_eq!(route("GET", "/api/v1/calc", Some("q=10.0.0.0%2F22&split=21"), None).status, 400);
         assert_eq!(route("GET", "/api/v1/calc", Some("q=nope"), None).status, 400);
         assert_eq!(route("GET", "/api/v1/calc", None, None).status, 400);
+        let r = route("GET", "/api/v1/contains", Some("net=10.0.0.0%2F22&ip=10.0.1.77"), None);
+        assert!(r.body.contains("\"inside\""), "{}", r.body);
+        assert_eq!(route("GET", "/api/v1/contains", Some("net=10.0.0.0%2F22"), None).status, 400);
+        let r = route("GET", "/api/v1/summarize", Some("q=10.0.0.0%2F24%2C10.0.1.0%2F24"), None);
+        assert!(r.body.contains("10.0.0.0/23"), "{}", r.body);
         assert_eq!(route("GET", "/api/v1/me", None, None).status, 404);
         let r = route("GET", "/api/v1/me", None, Some("2001:db8::1"));
         assert_eq!(r.status, 200);
