@@ -79,7 +79,11 @@ whole files.
 
 1. Bump `version` in `Cargo.toml` (`v0.MINOR.PATCH`; patch for fixes and UI
    polish, minor for a new tool or API field). Run the checks above.
-2. Merge to `main`, then tag and push: `git tag -s v<version> -m v<version>`,
+2. Merge to `main` once CI is green, without waiting for a review:
+   `gh stack merge <pr> --yes --squash` for a stacked PR; a single PR is
+   not a stack, so `gh pr merge <pr> --squash --delete-branch --admin`.
+   Pull `main` and check `Cargo.toml` has the new version before tagging,
+   then tag and push: `git tag -s v<version> -m v<version>`,
    `git push origin v<version>`.
 3. Watch the release run; take the index digest:
    `docker buildx imagetools inspect ghcr.io/franzramadhan/ipcalc:<version> | grep Digest`.
