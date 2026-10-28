@@ -15,7 +15,7 @@ serde_json = "1"
 wstd = { version = "0.6.8", default-features = false }
 # Pinned to WASI 0.2.4: the runwasi wasmtime shim (wasmtime 36) serves WASI
 # 0.2.6 and refuses components that import newer versions. See README.
-wasip2 = "=1.0.1"
+wasip2 = "=1.0.4"
 
 [profile.release]
 opt-level = "s"
