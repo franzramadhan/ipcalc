@@ -133,9 +133,17 @@
       </tbody>
     </table>
     <p>Every answer has <code>title</code>, <code>facts[]</code> (<code>label</code>, <code>value</code>, <code>why</code>) and <code>prompt</code>; <code>calc</code> adds <code>family</code>, <code>canonical</code>, <code>kind</code> and <code>split</code>. Bad input returns HTTP 400 with <code>{"error": "..."}</code>.</p>
-    <pre><code>curl -s 'https://ipcalc.franzramadhan.dev/api/v1/calc?q=2001:db8::1/64' | jq '.facts[] | {label, value}'
-curl -s 'https://ipcalc.franzramadhan.dev/api/v1/contains?net=10.0.0.0/22&amp;ip=10.0.1.77' | jq -r '.facts[] | select(.label == "Result").value'
-curl -s 'https://ipcalc.franzramadhan.dev/api/v1/summarize?q=10.0.0.0/24,10.0.1.0/24' | jq '.facts[1].value'</code></pre>
+    <pre class="shell"><code><span class="c"># Explain a prefix, keep label and value</span>
+curl -s 'https://ipcalc.franzramadhan.dev/api/v1/calc?q=2001:db8::1/64' \
+  | jq '.facts[] | {label, value}'
+
+<span class="c"># Is 10.0.1.77 inside 10.0.0.0/22?</span>
+curl -s 'https://ipcalc.franzramadhan.dev/api/v1/contains?net=10.0.0.0/22&amp;ip=10.0.1.77' \
+  | jq -r '.facts[] | select(.label == "Result").value'
+
+<span class="c"># Summarize two /24s into one route</span>
+curl -s 'https://ipcalc.franzramadhan.dev/api/v1/summarize?q=10.0.0.0/24,10.0.1.0/24' \
+  | jq '.facts[1].value'</code></pre>
     <p class="note">Rate limit: 60 API requests per 10 seconds per IP, then blocked for 10 seconds. The service sleeps from 23:30 to 06:00 WIB. Source and docs: <a href="https://github.com/franzramadhan/ipcalc">github.com/franzramadhan/ipcalc</a>.</p>
   </section>
 
