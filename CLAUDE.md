@@ -85,8 +85,5 @@ whole files.
    Pull `main` and check `Cargo.toml` has the new version before tagging,
    then tag and push: `git tag -s v<version> -m v<version>`,
    `git push origin v<version>`.
-3. Watch the release run; take the index digest:
-   `docker buildx imagetools inspect ghcr.io/franzramadhan/ipcalc:<version> | grep Digest`.
-4. Deploy: the homelab infra repo pins `ipcalc:<version>@sha256:<digest>` in
-   `kubernetes/apps/ipcalc/deployment.yaml` (and the version in its app table);
-   PR, merge, Flux applies. Check the live page loads `app.js?v=<version>`.
+3. Watch the release run until it is green.
+4. Deploy: follow `CLAUDE.local.md` (local only, not in this repo).
